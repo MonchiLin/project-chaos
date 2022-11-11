@@ -1,6 +1,6 @@
 import {useEffect, useState} from "react";
 import {LotteryDrawGridController} from "@chaos/lottery-draw";
-import {LotteryDrawGridBlock, LotteryDrawGridBlockProps} from "@chaos/lottery-draw/src";
+import {LotteryDrawGridBlock, LotteryDrawGridBlockProps} from "@chaos/lottery-draw";
 
 // 块水平分割线
 export function BlockHr(props: { blockIndex: number }) {

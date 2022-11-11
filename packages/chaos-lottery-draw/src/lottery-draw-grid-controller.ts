@@ -164,6 +164,23 @@ export class LotteryDrawGridController extends Presenter<LotteryDrawGridControll
     this.destination = new LotteryDrawGridDestination(this.roller)
   }
 
+
+  /**
+   * 启动滚动
+   */
+  public start(): void {
+    // 如果不是 Ready 状态, 则先转换到 Ready 状态
+    // 只有 Ready 状态才能启动滚动
+    if (this.stateMachine.state !== LotteryDrawGridControllerState.Ready) {
+      this.stateMachine.transfer(LotteryDrawGridControllerState.Ready)
+    }
+    this.stateMachine.transfer(LotteryDrawGridControllerState.Running)
+
+    // 预计加速结束时间
+    console.log('启动: 当前时间', new Date())
+    console.log('预计加速结束时间', new Date(this.roller.expectedAccelerationEndTime))
+  }
+
   /**
    * 结束在某个 index 上面
    */
@@ -172,7 +189,14 @@ export class LotteryDrawGridController extends Presenter<LotteryDrawGridControll
       throw new Error("index out of range, index must be in [0, 8]")
     }
 
+    this.roller.willStop();
     this.destination.endOf(index, this.vm.rollerIndex)
+
+    // 预计加速结束时间
+    console.log("即将结束")
+    console.log('当前时间', new Date())
+    console.log('预计加速度结束时间', new Date(this.roller.expectedAccelerationEndTime))
+    console.log("剩余次数", this.destination.remainingTimes)
   }
 
   /**
@@ -184,17 +208,6 @@ export class LotteryDrawGridController extends Presenter<LotteryDrawGridControll
       this.stateMachine.transfer(LotteryDrawGridControllerState.Ready)
     }
   }
-
-  /**
-   * 启动滚动
-   */
-  public start(): void {
-    if (this.stateMachine.state !== LotteryDrawGridControllerState.Ready) {
-      this.stateMachine.transfer(LotteryDrawGridControllerState.Ready)
-    }
-    this.stateMachine.transfer(LotteryDrawGridControllerState.Running)
-  }
-
   /**
    * 暂停滚动
    */
@@ -207,10 +220,9 @@ export class LotteryDrawGridController extends Presenter<LotteryDrawGridControll
    * @private
    */
   private next() {
-    console.log(this.roller.currentSpeed)
     this.task.setTimeout(() => {
       const nextIndex = this.vm.rollerIndex + 1
-      if (this.destination.isWaiting) {
+      if (this.destination.WillEnd) {
         if (this.destination.remainingTimes > 0) {
           this.destination.remainingTimes--
         } else {

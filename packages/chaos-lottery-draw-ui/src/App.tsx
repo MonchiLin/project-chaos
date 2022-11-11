@@ -14,12 +14,13 @@ function App() {
       return
     }
     controller.current.start()
+    const index = Math.floor(Math.random() * 9)
+    console.log("停止于索引: ", index)
 
     setTimeout(() => {
       // 随机生成 0-8
-      const index = Math.floor(Math.random() * 9)
       controller.current.endOf(index)
-    }, 4000)
+    }, 8000)
   }
 
   return (
