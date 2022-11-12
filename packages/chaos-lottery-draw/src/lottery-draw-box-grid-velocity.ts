@@ -1,18 +1,9 @@
-import {easeOut, easeIn, clamp} from "./lottery-draw-utils";
-
-export enum LotteryDrawRollerKind {
-  // 随机
-  Random,
-  // 从左到右
-  LeftToRight,
-  // 从右到左
-  RightToLeft,
-}
+import {easeOut, easeIn, clamp} from "./lottery-draw-box-utils";
 
 export type LotteryDrawRollerSpeedConfig = {
-  // 最多在一个快停留多少秒
+  // 最多在一个快停留多少秒, 同时也是起始速度
   maximum: number;
-  // 最低在一个快停留多少毫秒, 同时也是起始速度
+  // 最低在一个快停留多少毫秒
   minimum: number
   // 加速到最大速度需要多长时间 (毫秒)
   accelerationDuration: number
@@ -20,27 +11,23 @@ export type LotteryDrawRollerSpeedConfig = {
   decelerationDuration: number
 }
 
-export type LotteryDrawRollerCtorParams = {
-  // 滚动方式
-  kind?: LotteryDrawRollerKind
+export type LotteryDrawBoxGridVelocityConfig = {
   // 滚动速度
-  speedConfig?: LotteryDrawRollerSpeedConfig
+  config?: LotteryDrawRollerSpeedConfig
 }
 
 export enum LotteryDrawGridRollerAccelerationKind {
   // 初始状态
-  Initial,
+  None,
   // 加速
   Accelerate,
   // 减速
   Decelerate,
 }
 
-export class LotteryDrawGridRoller {
-  // 滚动方式
-  public kind: LotteryDrawRollerKind
+export class LotteryDrawBoxGridVelocity {
   // 滚动速度
-  public speedConfig: Readonly<LotteryDrawRollerSpeedConfig>
+  public config: Readonly<LotteryDrawRollerSpeedConfig>
   // 启动的时间
   public startTime: number = 0
   // 现在的速度
@@ -54,40 +41,31 @@ export class LotteryDrawGridRoller {
   public get expectedAccelerationEndTime() {
     switch (this.accelerationKind) {
     case LotteryDrawGridRollerAccelerationKind.Accelerate:
-      return this.startTime + this.speedConfig.accelerationDuration
+      return this.startTime + this.config.accelerationDuration
     case LotteryDrawGridRollerAccelerationKind.Decelerate:
-      return this.startTime + this.speedConfig.decelerationDuration
+      return this.startTime + this.config.decelerationDuration
     }
     return 0;
   }
 
-  constructor(params: LotteryDrawRollerCtorParams) {
-    if (params.speedConfig) {
-      this.speedConfig = params.speedConfig
+  constructor(params: LotteryDrawBoxGridVelocityConfig) {
+    if (params.config) {
+      this.config = params.config
     } else {
-      this.speedConfig = {
+      this.config = {
         maximum: 600,
         minimum: 100,
         accelerationDuration: 4000,
         decelerationDuration: 4000,
       }
     }
-    if (params.kind) {
-      this.kind = params.kind
-    } else {
-      this.kind = LotteryDrawRollerKind.Random
-    }
 
-    this.accelerationKind = LotteryDrawGridRollerAccelerationKind.Initial
-  }
-
-  public get speed() {
-    return this.currentSpeed
+    this.accelerationKind = LotteryDrawGridRollerAccelerationKind.None
   }
 
   public reset() {
     this.startTime = 0
-    this.accelerationKind = LotteryDrawGridRollerAccelerationKind.Initial
+    this.accelerationKind = LotteryDrawGridRollerAccelerationKind.None
   }
 
   /**
@@ -98,24 +76,24 @@ export class LotteryDrawGridRoller {
       // 当前已经运动的时间 = 当前时间 - 启动时间
       // 初始速度 = 最低速度
       // 目标值和初始值的差值 = 最高速度 - 最低速度
-      const delta = easeIn(new Date().getTime() - this.startTime, this.speedConfig.maximum, this.speedConfig.maximum - this.speedConfig.minimum, this.speedConfig.accelerationDuration)
-      const value = this.speedConfig.maximum - (delta - this.speedConfig.maximum)
+      const delta = easeIn(new Date().getTime() - this.startTime, this.config.maximum, this.config.maximum - this.config.minimum, this.config.accelerationDuration)
+      const value = this.config.maximum - (delta - this.config.maximum)
 
       this.currentSpeed = clamp(
-        this.speedConfig.minimum,
-        this.speedConfig.maximum,
+        this.config.minimum,
+        this.config.maximum,
         value
       )
     } else {
       // 当前已经运动的时间 = 当前时间 - 启动时间
       // 初始速度 = 最高速度
       // 目标值和初始值的差值 = 最低速度 - 最高速度
-      const delta = easeIn(new Date().getTime() - this.startTime, this.speedConfig.maximum, this.speedConfig.maximum - this.speedConfig.minimum, this.speedConfig.accelerationDuration)
-      const value = this.speedConfig.minimum + (delta - this.speedConfig.maximum)
+      const delta = easeIn(new Date().getTime() - this.startTime, this.config.maximum, this.config.maximum - this.config.minimum, this.config.accelerationDuration)
+      const value = this.config.minimum + (delta - this.config.maximum)
 
       this.currentSpeed = clamp(
-        this.speedConfig.minimum,
-        this.speedConfig.maximum,
+        this.config.minimum,
+        this.config.maximum,
         value
       )
     }
@@ -127,7 +105,7 @@ export class LotteryDrawGridRoller {
   public start() {
     this.accelerationKind = LotteryDrawGridRollerAccelerationKind.Accelerate
     this.startTime = Date.now()
-    this.currentSpeed = this.speedConfig.maximum
+    this.currentSpeed = this.config.maximum
   }
 
   /**
@@ -136,7 +114,7 @@ export class LotteryDrawGridRoller {
   public willStop() {
     this.accelerationKind = LotteryDrawGridRollerAccelerationKind.Decelerate
     this.startTime = Date.now()
-    this.currentSpeed = this.speedConfig.minimum
+    this.currentSpeed = this.config.minimum
   }
 
 }

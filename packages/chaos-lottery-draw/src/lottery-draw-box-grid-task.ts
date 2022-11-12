@@ -1,6 +1,6 @@
 import {BackgroundTask} from "@chaos/core";
 
-export class LotteryDrawGridTask {
+export class LotteryDrawBoxGridTask {
   // backgroundTask 的实现方式
   protected backgroundTask!: BackgroundTask
 
