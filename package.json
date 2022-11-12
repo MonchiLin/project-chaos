@@ -15,7 +15,7 @@
   "scripts": {
     "native": "cd apps/expo && expo start",
     "web": "cd apps/next && yarn next",
-    "build": "yarn workspaces run build"
+    "build": "yarn workspace @chaos/core build && yarn workspace @chaos/lottery-draw build && yarn workspace @chaos/lottery-draw-ui build"
   },
   "resolutions": {
     "metro": "0.72.3"
