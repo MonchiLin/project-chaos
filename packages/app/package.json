@@ -2,6 +2,9 @@
   "version": "0.0.0",
   "name": "app",
   "main": "index.ts",
+  "scripts": {
+    "build": "echo 'no things to build'"
+  },
   "dependencies": {
     "@react-navigation/native": "^6.0.8",
     "@react-navigation/native-stack": "^6.5.0",
