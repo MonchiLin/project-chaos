@@ -1,4 +1,4 @@
-import {useEffect, useRef} from 'react'
+import {useEffect, useRef, useState} from 'react'
 import {LotteryDrawBoxGrid} from "./components/lottery-draw-box-grid";
 import {
   LotteryDrawBoxGridController,
@@ -9,14 +9,18 @@ import {
 import {LotteryDrawNineBoxGrid} from "./components/lottery-draw-nine-box-grid";
 
 function App() {
-  const blocks1 = [
-    [1, 2, 3],
-    [1, 2, 3],
-    [1, 2, 3],
-    [1, 2, 3],
-  ]
-  const controller1 = useRef(new LotteryDrawBoxGridController({template: LotteryDrawBoxGridTemplate.fromArray(blocks1)}))
-  const controller2 = useRef(new LotteryDrawBoxGridController({template: LotteryDrawBoxGridTemplateBuiltIn.NineGridTemplate()}))
+  const [rowIndex, setRowIndex] = useState(-1)
+  const [columnIndex, setColumn] = useState(-1)
+  const controller1 = useRef(new LotteryDrawBoxGridController({
+    template: LotteryDrawBoxGridTemplate.fromArray([
+        [1, 2, 3],
+        [1, 2, 3],
+        [1, 2, 3],
+        [1, 2, 3],
+      ]
+    )
+  }))
+  const controller2 = useRef(new LotteryDrawBoxGridController({template: LotteryDrawBoxGridTemplateBuiltIn.NineGridTemplate(true)}))
 
   useEffect(() => {
     return () => {
@@ -45,22 +49,24 @@ function App() {
       return
     }
     controller2.current.start()
-    const rowIndex = randomInt(1, 3)
-    const colIndex = randomInt(1, 4)
+    const rowIndex = randomInt(0, 2)
+    const colIndex = randomInt(0, 2)
+    setRowIndex(rowIndex)
+    setColumn(colIndex)
     console.log("停止于第: ", rowIndex, "行 第", colIndex + "列")
 
     setTimeout(() => {
       // 随机生成 0-8
       controller2.current.endOf(rowIndex, colIndex)
-    }, 8000)
+    }, 4000)
   }
 
   return (
     <div className="App">
       <LotteryDrawBoxGrid controller={controller1.current}/>
       <button onClick={start1}>启动</button>
-      <LotteryDrawNineBoxGrid controller={controller2.current}/>
-      <button onClick={start2}>启动</button>
+      <LotteryDrawNineBoxGrid handleCenterClick={start2} controller={controller2.current}/>
+      <span>停止于第 {rowIndex} 行, 第 {columnIndex} 列</span>
     </div>
   )
 }

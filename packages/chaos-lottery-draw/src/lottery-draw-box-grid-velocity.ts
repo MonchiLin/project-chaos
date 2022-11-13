@@ -55,8 +55,8 @@ export class LotteryDrawBoxGridVelocity {
       this.config = {
         maximum: 600,
         minimum: 100,
-        accelerationDuration: 4000,
-        decelerationDuration: 4000,
+        accelerationDuration: 3000,
+        decelerationDuration: 3000,
       }
     }
 

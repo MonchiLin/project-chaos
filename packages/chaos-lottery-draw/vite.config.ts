@@ -15,5 +15,6 @@ export default defineConfig({
       name: 'ChaosLotteryDraw',
       formats: ['cjs', 'es', 'umd'],
     },
+    minify: false,
   },
 });

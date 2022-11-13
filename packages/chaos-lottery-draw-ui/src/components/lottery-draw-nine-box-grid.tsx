@@ -4,26 +4,32 @@ import {
   LotteryDrawBoxGridController,
   LotteryDrawBoxGridTemplate
 } from "@chaos/lottery-draw";
+import {Images} from "../constans";
 
 export function BlockRender(props: LotteryDrawBoxGridBlockProps) {
 
-  return <div style={{
-    backgroundColor: "black", width: "calc(33% - 6px)", height: 50,
-    borderWidth: "2px",
-    borderStyle: "solid",
-    borderColor: props.active ? "red" : "white",
-    color: "white"
-  }}>
-    {props.block.key}
+  return <div
+    className={"overflow-hidden text-color"}
+    style={{
+      backgroundColor: "black", width: "calc(33% - 6px)", height: 200,
+      borderWidth: "4px",
+      borderStyle: "solid",
+      borderColor: props.active ? "#06ff00" : "white",
+    }}>
+    <img
+      src={(props.visible && props.active) ? Images.Const[props.blockIndex] : Images.RedPacket}
+      className={"object-cover"}
+    />
   </div>
 }
 
 export type LotteryDrawNineBoxProps = {
   panelSize?: number;
   controller: LotteryDrawBoxGridController,
+  handleCenterClick: () => void
 }
 
-export function LotteryDrawNineBoxGrid({panelSize = 500, controller}: LotteryDrawNineBoxProps) {
+export function LotteryDrawNineBoxGrid({panelSize = 800, controller, handleCenterClick}: LotteryDrawNineBoxProps) {
 
   const [_, setVM] = useState(controller.vm)
 
@@ -32,27 +38,33 @@ export function LotteryDrawNineBoxGrid({panelSize = 500, controller}: LotteryDra
     return () => controller.unsubscribe(setVM)
   }, [])
 
-  return <div style={{display: "flex", flexDirection: "row", flexWrap: "wrap", width: panelSize}}>
-    {controller.template.flatMap((block, index) => {
+  let index = -1
+  const currentBlock = controller.isCompleted ? controller.vm.selectedBlock : controller.isRunning ? controller.vm.currentBlock : null
+
+  return <div className={"flex flex-row flex-wrap"} style={{width: panelSize}}>
+    {controller.template.flatMap((block, rowIndex, columnIndex) => {
+      index += 1
       if (block.isVirtual) {
         return <div
+          onClick={handleCenterClick}
           key={block.key}
+          className={"flex justify-center items-center cursor-pointer text-white"}
           style={{
-            backgroundColor: "black", width: "calc(33% - 6px)", height: 50,
+            backgroundColor: "black", width: "calc(33% - 6px)", height: 200,
             borderWidth: "2px",
             borderStyle: "solid",
             borderColor: "white",
-            color: "white"
           }}>
-          空
+          开始抽奖
         </div>
       } else {
         return <BlockRender
           controller={controller}
-          active={!!controller.currentBlock?.eq(block)}
+          active={!!(currentBlock?.eq(block))}
           blockIndex={index}
           block={block}
           key={block.key}
+          visible={controller.isCompleted}
         />
       }
     })}

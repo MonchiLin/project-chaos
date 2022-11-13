@@ -6,6 +6,7 @@ export type LotteryDrawBoxGridBlockProps = {
   active: boolean;
   blockIndex: number;
   controller: LotteryDrawBoxGridController
+  visible: boolean
 }
 
 export enum LotteryDrawBoxGridDirection {

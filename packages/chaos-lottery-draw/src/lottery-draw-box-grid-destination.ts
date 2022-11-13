@@ -1,50 +1,37 @@
 import {randomInt} from "./lottery-draw-box-utils";
-import {LotteryDrawBoxGridBlock} from "./lottery-draw-box-grid-template";
-
-export enum LotteryDrawDestinationState {
-  // 空
-  None,
-  // 等待结束
-  WillEnd,
-}
+import {LotteryDrawBoxGridBlock, LotteryDrawBoxGridTemplate} from "./lottery-draw-box-grid-template";
+import {LotteryDrawBoxGridRoller} from "./lottery-draw-box-grid-roller";
 
 export class LotteryDrawBoxGridDestination {
-  /**
-   * 结束的索引
-   * 正常逻辑滚动结束时下 rollerIndex 应该等于 endIndex, 但是可能因为某些逻辑错误导致 rollerIndex 不等于 endIndex
-   * 所以分成两个字段记录
-   */
-  public block: LotteryDrawBoxGridBlock | null
+  private _isWillEnd: boolean = false
 
   // 结束状态
-  public state: LotteryDrawDestinationState
+  public get isWillEnd() {
+    return this._isWillEnd
+  }
 
   // 距离结束剩余多少次
   public remainingTimes: number
 
   constructor() {
-    this.state = LotteryDrawDestinationState.None
+    this._isWillEnd = false
     this.remainingTimes = 0
-    this.block = null
-  }
-
-  public get WillEnd() {
-    return this.state === LotteryDrawDestinationState.WillEnd
   }
 
   public reset() {
-    this.state = LotteryDrawDestinationState.None
-    this.block = null
+    this._isWillEnd = false
     this.remainingTimes = 0
   }
 
-  public endOf(block: LotteryDrawBoxGridBlock, currentBlock: LotteryDrawBoxGridBlock) {
-    this.block = block
-    this.state = LotteryDrawDestinationState.WillEnd
-    // 如果当前索引大于目标索引, 那么需要多滚动一圈
-    const realRemainingTimes = 0
-
-    this.remainingTimes = realRemainingTimes + randomInt(2, 3) * 9
+  public endOf(block: Readonly<LotteryDrawBoxGridBlock>, currentBlock: Readonly<LotteryDrawBoxGridBlock>, roller: Readonly<LotteryDrawBoxGridRoller>, template: Readonly<LotteryDrawBoxGridTemplate>) {
+    this._isWillEnd = true
+    console.log("要停止的区块", block.toString())
+    console.log("当前区块", currentBlock.toString())
+    const oneLoopCount = roller.getLoopCount(template)
+    // 如果本次循环中已经经过了当前块, 则多执行一圈, 否则就是执行到当前快所需的次数
+    const realRemainingTimes = roller.nextLoopCountOf(block, currentBlock, template)
+    console.log("剩余要循环的次数", realRemainingTimes)
+    this.remainingTimes = realRemainingTimes
   }
 
 }

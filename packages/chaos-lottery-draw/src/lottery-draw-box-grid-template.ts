@@ -8,13 +8,13 @@ export class LotteryDrawBoxGridBlock<T = any> {
   public isVirtual: Readonly<boolean> = false;
 
   constructor({
-    rowSize = 1,
-    columnSize = 1,
-    rowIndex,
-    columnIndex,
-    payload,
-    isVirtual = false,
-  }: { rowSize?: number, columnSize?: number, rowIndex: number, columnIndex: number, payload?: T, isVirtual?: boolean }) {
+                rowSize = 1,
+                columnSize = 1,
+                rowIndex,
+                columnIndex,
+                payload,
+                isVirtual = false,
+              }: { rowSize?: number, columnSize?: number, rowIndex: number, columnIndex: number, payload?: T, isVirtual?: boolean }) {
     this.rowSize = rowSize;
     this.columnSize = columnSize;
     this.rowIndex = rowIndex
@@ -64,7 +64,7 @@ export class LotteryDrawBoxGridTemplate {
 
   // 获取某行的列数
   public columnCountOf(rowIndex: number) {
-    return this.grids[rowIndex].length
+    return this.grids[rowIndex].filter(i => !i.isVirtual).length
   }
 
   // 获取某个格子
@@ -84,6 +84,37 @@ export class LotteryDrawBoxGridTemplate {
       result.push(rowResult)
     }
     return result
+  }
+
+  // findIndex
+  public findSize(callback: (block: LotteryDrawBoxGridBlock, rowIndex: number, columnIndex: number) => boolean): number {
+    let index = -1;
+    for (const rows of this.grids) {
+      for (const block of rows) {
+        if (block.isVirtual) {
+          continue
+        }
+        index += 1
+        const result = callback(block, block.rowIndex, block.columnIndex)
+        if (result) {
+          return index
+        }
+      }
+    }
+
+    return -1;
+  }
+
+  // reduce
+  public reduce<R = any, B = any>(callback: (accumulator: R, block: LotteryDrawBoxGridBlock<B>, rowIndex: number, columnIndex: number) => R, initialValue: R): R {
+    let accumulator = initialValue
+    for (let i = 0; i < this.grids.length; i++) {
+      const row = this.grids[i]
+      for (let j = 0; j < row.length; j++) {
+        accumulator = callback(accumulator, row[j], i, j)
+      }
+    }
+    return accumulator
   }
 
   // flatMap
@@ -160,6 +191,14 @@ export class LotteryDrawBoxGridTemplate {
    */
   get firstBlock() {
     return this.grids[0][0]
+  }
+
+  /**
+   * 最后一块
+   */
+  get latestBlock() {
+    const lastRow = this.grids[this.grids.length - 1]
+    return lastRow[lastRow.length - 1]
   }
 
   /**
