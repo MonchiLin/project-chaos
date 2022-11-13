@@ -11,6 +11,8 @@ export interface LotteryDrawGridControllerVM {
   currentBlock: LotteryDrawBoxGridBlock | null,
   // 最终被选中的块
   selectedBlock: LotteryDrawBoxGridBlock | null,
+  // 控制器状态
+  state: LotteryDrawGridControllerState
 }
 
 export enum LotteryDrawGridControllerState {
@@ -53,88 +55,97 @@ export class LotteryDrawBoxGridController extends Presenter<LotteryDrawGridContr
   // 滚动对象
   private readonly roller!: LotteryDrawBoxGridRoller
 
-  private readonly stateMachine = new class {
-    public controller!: LotteryDrawBoxGridController
-    private _state: LotteryDrawGridControllerState = LotteryDrawGridControllerState.Ready
-    public get state() {
-      return this._state
+  public transfer(state: LotteryDrawGridControllerState) {
+    switch (state) {
+      case LotteryDrawGridControllerState.Completed:
+        return this.transferToCompleted();
+      case LotteryDrawGridControllerState.Pause:
+        return this.transferToPause()
+      case LotteryDrawGridControllerState.Ready:
+        return this.transferToReady()
+      case LotteryDrawGridControllerState.Running:
+        return this.transferToRunning()
+    }
+  }
+
+  private transferToPause() {
+    if (this.vm.state !== LotteryDrawGridControllerState.Running) {
+      throw new Error('invalid state')
     }
 
-    public transfer(state: LotteryDrawGridControllerState) {
-      switch (state) {
-        case LotteryDrawGridControllerState.Completed:
-          return this.transferToCompleted();
-        case LotteryDrawGridControllerState.Pause:
-          return this.transferToPause()
-        case LotteryDrawGridControllerState.Ready:
-          return this.transferToReady()
-        case LotteryDrawGridControllerState.Running:
-          return this.transferToRunning()
-      }
-    }
+    this.vm.state = LotteryDrawGridControllerState.Pause
+    this.task.reset()
+  }
 
-    private transferToPause() {
-      if (this._state !== LotteryDrawGridControllerState.Running) {
-        throw new Error('invalid state')
-      }
+  private transferToReady() {
+    this.vm.state = LotteryDrawGridControllerState.Ready
+    this.updateVM({
+      currentBlock: null,
+      selectedBlock: null,
+    })
+    this.destination.reset()
+    this.velocity.reset()
+    this.task.reset()
+  }
 
-      this._state = LotteryDrawGridControllerState.Pause
-      this.controller.task.reset()
-    }
-
-    private transferToReady() {
-      this._state = LotteryDrawGridControllerState.Ready
-      this.controller.updateVM({
-        currentBlock: null,
-        selectedBlock: null,
+  private transferToRunning() {
+    if (this.vm.state === LotteryDrawGridControllerState.Ready) {
+      this.velocity.start()
+      this.updateVM({
+        state: LotteryDrawGridControllerState.Running,
+        currentBlock: this.template.firstBlock
       })
-      this.controller.destination.reset()
-      this.controller.velocity.reset()
-      this.controller.task.reset()
+      this.next()
+    } else if (this.vm.state === LotteryDrawGridControllerState.Pause) {
+      this.updateVM({
+        state: LotteryDrawGridControllerState.Running
+      })
+      this.next()
+    } else if (this.vm.state === LotteryDrawGridControllerState.Running) {
+      this.updateVM({
+        state: LotteryDrawGridControllerState.Running
+      })
+      this.velocity.acceleration()
+      this.next()
+    } else {
+      throw new Error('invalid state')
     }
+  }
 
-    private transferToRunning() {
-      if (this.state === LotteryDrawGridControllerState.Ready) {
-        this.controller.velocity.start()
-        this._state = LotteryDrawGridControllerState.Running
-        this.controller.updateVM({
-          currentBlock: this.controller.template.firstBlock
-        })
-        this.controller.next()
-      } else if (this.state === LotteryDrawGridControllerState.Pause) {
-        this._state = LotteryDrawGridControllerState.Running
-        this.controller.next()
-      } else if (this.state === LotteryDrawGridControllerState.Running) {
-        this._state = LotteryDrawGridControllerState.Running
-        this.controller.velocity.acceleration()
-        this.controller.next()
-      } else {
-        throw new Error('invalid state')
-      }
+  private transferToCompleted() {
+    if (this.vm.state !== LotteryDrawGridControllerState.Running) {
+      throw new Error('invalid state')
     }
-
-    private transferToCompleted() {
-      if (this._state !== LotteryDrawGridControllerState.Running) {
-        throw new Error('invalid state')
-      }
-      this._state = LotteryDrawGridControllerState.Completed
-    }
+    this.updateVM({
+      state: LotteryDrawGridControllerState.Completed
+    })
   }
 
   // 是否正在运行
   public get isRunning() {
-    return this.stateMachine.state === LotteryDrawGridControllerState.Running
+    return this.vm.state === LotteryDrawGridControllerState.Running
   }
 
   // 是否已经完成
   public get isCompleted() {
-    return this.stateMachine.state === LotteryDrawGridControllerState.Completed
+    return this.vm.state === LotteryDrawGridControllerState.Completed
+  }
+
+  // 是否处于暂停中
+  public get isPause() {
+    return this.vm.state === LotteryDrawGridControllerState.Pause
+  }
+
+  // 是否处于就绪状态
+  public get isReady() {
+    return this.vm.state === LotteryDrawGridControllerState.Ready
   }
 
   constructor(params: LotteryDrawGridControllerCtorParams) {
     super({
       currentBlock: null,
-      selectedBlock: null
+      selectedBlock: null,
+      state: LotteryDrawGridControllerState.Ready
     })
 
     if (params.backgroundTask) {
@@ -156,7 +167,6 @@ export class LotteryDrawBoxGridController extends Presenter<LotteryDrawGridContr
     }
 
     this.template = params.template
-    this.stateMachine.controller = this;
     this.destination = new LotteryDrawBoxGridDestination()
   }
 
@@ -167,10 +177,10 @@ export class LotteryDrawBoxGridController extends Presenter<LotteryDrawGridContr
   public start(): void {
     // 如果不是 Ready 状态, 则先转换到 Ready 状态
     // 只有 Ready 状态才能启动滚动
-    if (this.stateMachine.state !== LotteryDrawGridControllerState.Ready) {
-      this.stateMachine.transfer(LotteryDrawGridControllerState.Ready)
+    if (this.vm.state !== LotteryDrawGridControllerState.Ready) {
+      this.transfer(LotteryDrawGridControllerState.Ready)
     }
-    this.stateMachine.transfer(LotteryDrawGridControllerState.Running)
+    this.transfer(LotteryDrawGridControllerState.Running)
 
     // 预计加速结束时间
     console.log('启动: 当前时间', new Date())
@@ -188,7 +198,7 @@ export class LotteryDrawBoxGridController extends Presenter<LotteryDrawGridContr
       block = this.template.blockOf(block, columnIndex!)
     }
     if (block.isVirtual) {
-      this.stateMachine.transfer(LotteryDrawGridControllerState.Ready)
+      this.transfer(LotteryDrawGridControllerState.Ready)
       throw new Error("Can't end on virtual block")
     }
 
@@ -215,7 +225,7 @@ export class LotteryDrawBoxGridController extends Presenter<LotteryDrawGridContr
    * 暂停滚动
    */
   public pause(): void {
-    this.stateMachine.transfer(LotteryDrawGridControllerState.Pause)
+    this.transfer(LotteryDrawGridControllerState.Pause)
   }
 
   /**
@@ -229,14 +239,14 @@ export class LotteryDrawBoxGridController extends Presenter<LotteryDrawGridContr
         if (this.destination.remainingTimes > 0) {
           this.destination.remainingTimes--
         } else {
-          return this.stateMachine.transfer(LotteryDrawGridControllerState.Completed)
+          return this.transfer(LotteryDrawGridControllerState.Completed)
         }
       }
 
       // 如果下一个索引等于 9, 则重置为 0
       this.updateVM({currentBlock: nextBlock})
 
-      this.stateMachine.transfer(LotteryDrawGridControllerState.Running)
+      this.transfer(LotteryDrawGridControllerState.Running)
     }, this.velocity.currentSpeed)
   }
 }

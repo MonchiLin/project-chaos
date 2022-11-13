@@ -45,10 +45,11 @@ export function LotteryDrawBoxGrid({panelSize = 500, controller}: LotteryDrawNin
   return <div style={{display: "flex", flexDirection: "row", flexWrap: "wrap", width: panelSize}}>
     {controller.template.flatMap((block, index) => <BlockRender
       controller={controller}
-      active={!! controller.currentBlock?.eq(block)}
+      active={!!controller.vm.currentBlock}
       blockIndex={index}
       block={block}
       key={block.key}
+      isCompleted={controller.isCompleted}
     />)}
   </div>
 }

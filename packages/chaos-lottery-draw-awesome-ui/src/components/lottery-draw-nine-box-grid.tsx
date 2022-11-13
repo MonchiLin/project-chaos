@@ -17,7 +17,7 @@ export function BlockRender(props: LotteryDrawBoxGridBlockProps) {
       borderColor: props.active ? "#06ff00" : "white",
     }}>
     <img
-      src={(props.visible && props.active) ? Images.Const[props.blockIndex] : Images.RedPacket}
+      src={(props.isCompleted && props.active) ? Images.Const[props.blockIndex] : Images.RedPacket}
       className={"object-cover"}
     />
   </div>
@@ -64,7 +64,7 @@ export function LotteryDrawNineBoxGrid({panelSize = 800, controller, handleCente
           blockIndex={index}
           block={block}
           key={block.key}
-          visible={controller.isCompleted}
+          isCompleted={controller.isCompleted}
         />
       }
     })}
